@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import time
 
-import pytest
+import unittest
 import rospy
 from geometry_msgs.msg import TwistStamped
 
@@ -15,12 +15,6 @@ JOINT_JOG_COMMAND_TOPIC = 'jog_arm_server/joint_delta_jog_cmds'
 CARTESIAN_JOG_COMMAND_TOPIC = 'jog_arm_server/delta_jog_cmds'
 
 COMMAND_OUT_TOPIC = 'jog_arm_server/command'
-
-
-@pytest.fixture
-def node():
-    return rospy.init_node('pytest', anonymous=True)
-
 
 class JointJogCmd(object):
     def __init__(self):
@@ -47,33 +41,39 @@ class CartesianJogCmd(object):
         ts.twist.angular.x, ts.twist.angular.y, ts.twist.angular.z = angular
         self._pub.publish(ts)
 
-def test_jog_arm_generates_joint_trajectory_when_joint_jog_command_is_received(node):
-    sub = rospy.Subscriber(
-        COMMAND_OUT_TOPIC, JointTrajectory, lambda x: received.append(x)
-    )
-    joint_cmd = JointJogCmd()
-    cartesian_cmd = CartesianJogCmd()
-    time.sleep(ROS_SETTLE_TIME_S)  # wait for pub/subs to settle
-    time.sleep(JOG_ARM_SETTLE_TIME_S)  # wait for jog_arm server to init
+class TestJogArmIntegration(unittest.TestCase):
+    def test_jog_arm_generates_joint_trajectory_when_joint_jog_command_is_received(self):
+        sub = rospy.Subscriber(
+            COMMAND_OUT_TOPIC, JointTrajectory, lambda x: received.append(x)
+        )
+        joint_cmd = JointJogCmd()
+        cartesian_cmd = CartesianJogCmd()
+        time.sleep(ROS_SETTLE_TIME_S)  # wait for pub/subs to settle
+        time.sleep(JOG_ARM_SETTLE_TIME_S)  # wait for jog_arm server to init
 
-    # Repeated zero-commands should produce no output, other than a few halt messages
-    # A subscriber in a different thread fills 'received'
-    cartesian_cmd.send_cmd([0, 0, 0], [0, 0, 0])
-    cartesian_cmd.send_cmd([0, 0, 0], [0, 0, 0])
-    cartesian_cmd.send_cmd([0, 0, 0], [0, 0, 0])
-    cartesian_cmd.send_cmd([0, 0, 0], [0, 0, 0])
-    received = []
-    rospy.sleep(1)
-    assert len(received) <= 2 # 2 is 'num_halt_msgs_to_publish' in the config file
+        # Repeated zero-commands should produce no output, other than a few halt messages
+        # A subscriber in a different thread fills 'received'
+        cartesian_cmd.send_cmd([0, 0, 0], [0, 0, 0])
+        cartesian_cmd.send_cmd([0, 0, 0], [0, 0, 0])
+        cartesian_cmd.send_cmd([0, 0, 0], [0, 0, 0])
+        cartesian_cmd.send_cmd([0, 0, 0], [0, 0, 0])
+        received = []
+        rospy.sleep(1)
+        assert len(received) <= 2 # 2 is 'num_halt_msgs_to_publish' in the config file
 
-    # This nonzero command should produce jogging output
-    # A subscriber in a different thread fills `received`
-    test_duration = 1
-    publish_period = 0.01 # 'publish_period' from config file
-    cartesian_cmd.send_cmd([0, 0, 0], [0, 0, 1])
-    received = []
-    rospy.sleep(test_duration)
-    # test_duration/publish_period is the expected number of messages in this duration.
-    # Allow a small +/- window of 3 due to small rounding/timing errors
-    assert len(received) > test_duration/publish_period - 3
-    assert len(received) < test_duration/publish_period + 3
+        # This nonzero command should produce jogging output
+        # A subscriber in a different thread fills `received`
+        test_duration = 1
+        publish_period = 0.01 # 'publish_period' from config file
+        cartesian_cmd.send_cmd([0, 0, 0], [0, 0, 1])
+        received = []
+        rospy.sleep(test_duration)
+        # test_duration/publish_period is the expected number of messages in this duration.
+        # Allow a small +/- window of 3 due to small rounding/timing errors
+        self.assertGreater( len(received), test_duration/publish_period - 3)
+        self.assertLess( len(received), test_duration/publish_period + 3 )
+
+if __name__ == '__main__':
+    import rostest
+    rospy.init_node('test_jog_arm_generates_joint_trajectory_integrationtest')
+    rostest.rosrun('moveit_experimental', 'test_jog_arm_generates_joint_trajectory_integrationtest', TestJogArmIntegration)

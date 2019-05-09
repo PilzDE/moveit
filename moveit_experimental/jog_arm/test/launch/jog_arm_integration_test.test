@@ -31,6 +31,5 @@
     </node>
   </group>
 
-  <param name="test_module" value="$(find moveit_experimental)/jog_arm/test/integration" />
-  <test test-name="jog_arm_integration_test" pkg="ros_pytest" type="ros_pytest_runner" />
+  <test test-name="jog_arm_integration_test" pkg="moveit_experimental" type="test_jog_arm_integration.py" />
 </launch>
