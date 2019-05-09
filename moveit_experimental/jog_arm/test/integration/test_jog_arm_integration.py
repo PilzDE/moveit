@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import time
 
 import unittest
 import rospy
@@ -48,8 +47,8 @@ class TestJogArmIntegration(unittest.TestCase):
         )
         joint_cmd = JointJogCmd()
         cartesian_cmd = CartesianJogCmd()
-        time.sleep(ROS_SETTLE_TIME_S)  # wait for pub/subs to settle
-        time.sleep(JOG_ARM_SETTLE_TIME_S)  # wait for jog_arm server to init
+        rospy.sleep(ROS_SETTLE_TIME_S)  # wait for pub/subs to settle
+        rospy.sleep(JOG_ARM_SETTLE_TIME_S)  # wait for jog_arm server to init
 
         # Repeated zero-commands should produce no output, other than a few halt messages
         # A subscriber in a different thread fills 'received'
