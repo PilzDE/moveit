@@ -316,9 +316,9 @@ bool JogCalcs::cartesianJogCalcs(geometry_msgs::TwistStamped& cmd, JogArmShared&
   outgoing_command_ = composeOutgoingMessage(jt_state_, next_time);
 
   // If close to a collision or a singularity, decelerate
-  applyVelocityScaling(shared_variables, mutex, outgoing_command_, delta_theta_,
+  /* applyVelocityScaling(shared_variables, mutex, outgoing_command_, delta_theta_,
                        decelerateForSingularity(delta_x, svd_));
-
+ */
   if (!checkIfJointsWithinURDFBounds(outgoing_command_))
   {
     suddenHalt(outgoing_command_);

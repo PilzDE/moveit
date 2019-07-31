@@ -1,3 +1,13 @@
+// author modification:  kaibs kai.b.schneider@gmail.com
+// date:                 20190739
+//
+// modified version to directly exexcute jogging-commands in RViz
+// when fake_controller is used, commands on topics jog_arm_server/delta_jog_cmds and
+// jog_arm_server/joint_delta_jog_cmds are directly feeded into the trajectory_execution_manager
+//
+// changes only in  includes, lines 82-94 and lines 154-160
+
+
 ///////////////////////////////////////////////////////////////////////////////
 //      Title     : jog_ros_interface.cpp
 //      Project   : jog_arm
@@ -41,6 +51,14 @@
 
 #include <jog_arm/jog_ros_interface.h>
 
+
+// additional includes for direct pubblishing and executing
+#include <moveit/trajectory_execution_manager/trajectory_execution_manager.h>
+#include <tf2_ros/transform_listener.h>
+#include <moveit/planning_scene_monitor/current_state_monitor.h>
+#include <memory>
+
+
 namespace jog_arm
 {
 /////////////////////////////////////////////////////////////////////////////////
@@ -61,7 +79,21 @@ JogROSInterface::JogROSInterface()
     exit(EXIT_FAILURE);
 
   // Load the robot model. This is used by the worker threads.
+
+  // START MODIFIED #################################################################
+  
+  // initialize necessary components for pub&exec
+  auto tfBuffer = std::make_shared<tf2_ros::Buffer>();
+  tf2_ros::TransformListener tfListener(*tfBuffer);
+  
   model_loader_ptr_ = std::shared_ptr<robot_model_loader::RobotModelLoader>(new robot_model_loader::RobotModelLoader);
+  
+  auto monitor = std::make_shared<planning_scene_monitor::CurrentStateMonitor>(model_loader_ptr_->getModel(), tfBuffer);
+  
+  trajectory_execution_manager::TrajectoryExecutionManager trajectory_execution_manager (model_loader_ptr_->getModel(), monitor);
+  
+  // END MODIFIED ###################################################################
+
 
   // Crunch the numbers in this thread
   std::thread jogging_thread(&JogROSInterface::startJogCalcThread, this);
@@ -122,8 +154,10 @@ JogROSInterface::JogROSInterface()
       // (trajectory_msgs/JointTrajectory or std_msgs/Float64MultiArray).
       if (ros_parameters_.command_out_type == "trajectory_msgs/JointTrajectory")
       {
+        // MODIFIED ##################################################
         outgoing_command.header.stamp = ros::Time::now();
-        outgoing_cmd_pub.publish(outgoing_command);
+        // directly pushAndExecute() the calculated command 
+        trajectory_execution_manager.pushAndExecute(outgoing_command);
       }
       else if (ros_parameters_.command_out_type == "std_msgs/Float64MultiArray")
       {

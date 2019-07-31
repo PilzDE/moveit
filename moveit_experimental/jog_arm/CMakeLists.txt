@@ -1,5 +1,9 @@
 set(JOG_ARM_NAME jog_arm)
 
+
+# add compiler options for C++14
+add_compile_options(-std=c++14)
+
 add_executable(${JOG_ARM_NAME}_server
   src/jog_arm/collision_check_thread.cpp
   src/jog_arm/jog_arm_server.cpp
