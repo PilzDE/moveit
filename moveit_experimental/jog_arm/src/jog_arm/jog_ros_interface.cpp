@@ -89,8 +89,12 @@ JogROSInterface::JogROSInterface()
   model_loader_ptr_ = std::shared_ptr<robot_model_loader::RobotModelLoader>(new robot_model_loader::RobotModelLoader);
   
   auto monitor = std::make_shared<planning_scene_monitor::CurrentStateMonitor>(model_loader_ptr_->getModel(), tfBuffer);
-  
-  trajectory_execution_manager::TrajectoryExecutionManager trajectory_execution_manager (model_loader_ptr_->getModel(), monitor);
+  std::shared_ptr<trajectory_execution_manager::TrajectoryExecutionManager> trajectory_execution_manager;
+
+  if (ros_parameters_.command_out_type == "trajectory_msgs/JointTrajectory")
+  {
+    trajectory_execution_manager = std::make_shared<trajectory_execution_manager::TrajectoryExecutionManager>(model_loader_ptr_->getModel(), monitor);
+  }
   
   // END MODIFIED ###################################################################
 
@@ -157,7 +161,7 @@ JogROSInterface::JogROSInterface()
         // MODIFIED ##################################################
         outgoing_command.header.stamp = ros::Time::now();
         // directly pushAndExecute() the calculated command 
-        trajectory_execution_manager.pushAndExecute(outgoing_command);
+        trajectory_execution_manager->pushAndExecute(outgoing_command);
       }
       else if (ros_parameters_.command_out_type == "std_msgs/Float64MultiArray")
       {
