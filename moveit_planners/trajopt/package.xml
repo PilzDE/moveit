@@ -6,8 +6,10 @@
   <author email="omid.github@gmail.com">Omid Heidari</author>
 
   <maintainer email="omid.github@gmail.com">Omid Heidari</maintainer>
-  <maintainer email="moveit_releasers@googlegroups.com">MoveIt! Release Team</maintainer>'members',
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt! Release Team</maintainer>
 
+  <license>BSD</license>
+  
   <url type="website">http://moveit.ros.org</url>
   <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
   <url type="repository">https://github.com/ros-planning/moveit</url>
