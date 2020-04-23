@@ -60,6 +60,7 @@ COMPONENTS
   tf2_eigen
   tf2_geometry_msgs
   eigen_stl_containers
+  eigen_conversions
   geometric_shapes
   geometry_msgs
   kdl_parser
@@ -224,4 +225,6 @@ add_subdirectory(dynamics_solver)
 
 if(BULLET_ENABLE)
   add_subdirectory(collision_detection_bullet)
+else()
+  install(FILES collision_detection_bullet/empty_description.xml DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION} RENAME collision_detector_bullet_description.xml)
 endif()

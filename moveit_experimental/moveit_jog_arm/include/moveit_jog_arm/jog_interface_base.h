@@ -42,6 +42,7 @@
 #include "jog_calcs.h"
 #include "low_pass_filter.h"
 #include <moveit/robot_state/robot_state.h>
+#include <moveit_msgs/ChangeDriftDimensions.h>
 #include <rosparam_shortcuts/rosparam_shortcuts.h>
 #include <sensor_msgs/Joy.h>
 #include <std_msgs/Float64MultiArray.h>
@@ -57,14 +58,30 @@ class JogInterfaceBase
 public:
   JogInterfaceBase();
 
+  /** \brief Update the joints of the robot */
   void jointsCB(const sensor_msgs::JointStateConstPtr& msg);
 
-  // Jogging calculation thread
+  /**
+   * Allow drift in certain dimensions. For example, may allow the wrist to rotate freely.
+   * This can help avoid singularities.
+   *
+   * @param request the service request
+   * @param response the service response
+   * @return true if the adjustment was made
+   */
+  bool changeDriftDimensions(moveit_msgs::ChangeDriftDimensions::Request& req,
+                             moveit_msgs::ChangeDriftDimensions::Response& res);
+
+  /** \brief Start the main calculation thread */
   bool startJogCalcThread();
+
+  /** \brief Stop the main calculation thread */
   bool stopJogCalcThread();
 
-  // Collision checking thread
+  /** \brief Start collision checking */
   bool startCollisionCheckThread();
+
+  /** \brief Stop collision checking */
   bool stopCollisionCheckThread();
 
 protected:
@@ -78,7 +95,6 @@ protected:
 
   // Share data between threads
   JogArmShared shared_variables_;
-  std::mutex shared_variables_mutex_;
 
   // Jog calcs
   std::unique_ptr<JogCalcs> jog_calcs_;

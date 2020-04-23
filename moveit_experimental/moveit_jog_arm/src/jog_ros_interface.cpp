@@ -90,6 +90,11 @@ JogROSInterface::JogROSInterface()
   ros::Subscriber joints_sub =
       nh.subscribe(ros_parameters_.joint_topic, 1, &JogInterfaceBase::jointsCB, dynamic_cast<JogInterfaceBase*>(this));
 
+  // ROS Server for allowing drift in some dimensions
+  ros::ServiceServer drift_dimensions_server =
+      nh.advertiseService(nh.getNamespace() + "/" + ros::this_node::getName() + "/change_drift_dimensions",
+                          &JogInterfaceBase::changeDriftDimensions, dynamic_cast<JogInterfaceBase*>(this));
+
   // Publish freshly-calculated joints to the robot.
   // Put the outgoing msg in the right format (trajectory_msgs/JointTrajectory or std_msgs/Float64MultiArray).
   ros::Publisher outgoing_cmd_pub;
@@ -112,20 +117,12 @@ JogROSInterface::JogROSInterface()
   {
     ros::spinOnce();
 
-    shared_variables_mutex_.lock();
+    shared_variables_.lock();
     trajectory_msgs::JointTrajectory outgoing_command = shared_variables_.outgoing_command;
 
     // Check for stale cmds
-    if ((ros::Time::now() - shared_variables_.latest_nonzero_cmd_stamp) <
-        ros::Duration(ros_parameters_.incoming_command_timeout))
-    {
-      // Mark that incoming commands are not stale
-      shared_variables_.command_is_stale = false;
-    }
-    else
-    {
-      shared_variables_.command_is_stale = true;
-    }
+    shared_variables_.command_is_stale = ((ros::Time::now() - shared_variables_.latest_nonzero_cmd_stamp) >=
+                                          ros::Duration(ros_parameters_.incoming_command_timeout));
 
     // Publish the most recent trajectory, unless the jogging calculation thread tells not to
     if (shared_variables_.ok_to_publish)
@@ -157,11 +154,13 @@ JogROSInterface::JogROSInterface()
       ROS_DEBUG_STREAM_THROTTLE_NAMED(10, LOGNAME, "All-zero command. Doing nothing.");
     }
 
-    shared_variables_mutex_.unlock();
+    shared_variables_.unlock();
 
     main_rate.sleep();
   }
 
+  // Stop JogArm threads
+  shared_variables_.stop_requested = true;
   stopJogCalcThread();
   stopCollisionCheckThread();
 }
@@ -169,7 +168,7 @@ JogROSInterface::JogROSInterface()
 // Listen to cartesian delta commands. Store them in a shared variable.
 void JogROSInterface::deltaCartesianCmdCB(const geometry_msgs::TwistStampedConstPtr& msg)
 {
-  shared_variables_mutex_.lock();
+  shared_variables_.lock();
 
   // Copy everything but the frame name. The frame name is set by yaml file at startup.
   // (so it isn't copied over and over)
@@ -183,24 +182,24 @@ void JogROSInterface::deltaCartesianCmdCB(const geometry_msgs::TwistStampedConst
   }
 
   // Check if input is all zeros. Flag it if so to skip calculations/publication after num_outgoing_halt_msgs_to_publish
-  shared_variables_.zero_cartesian_cmd_flag = shared_variables_.command_deltas.twist.linear.x == 0.0 &&
-                                              shared_variables_.command_deltas.twist.linear.y == 0.0 &&
-                                              shared_variables_.command_deltas.twist.linear.z == 0.0 &&
-                                              shared_variables_.command_deltas.twist.angular.x == 0.0 &&
-                                              shared_variables_.command_deltas.twist.angular.y == 0.0 &&
-                                              shared_variables_.command_deltas.twist.angular.z == 0.0;
+  shared_variables_.have_nonzero_cartesian_cmd = shared_variables_.command_deltas.twist.linear.x != 0.0 ||
+                                                 shared_variables_.command_deltas.twist.linear.y != 0.0 ||
+                                                 shared_variables_.command_deltas.twist.linear.z != 0.0 ||
+                                                 shared_variables_.command_deltas.twist.angular.x != 0.0 ||
+                                                 shared_variables_.command_deltas.twist.angular.y != 0.0 ||
+                                                 shared_variables_.command_deltas.twist.angular.z != 0.0;
 
-  if (!shared_variables_.zero_cartesian_cmd_flag)
+  if (shared_variables_.have_nonzero_cartesian_cmd)
   {
     shared_variables_.latest_nonzero_cmd_stamp = msg->header.stamp;
   }
-  shared_variables_mutex_.unlock();
+  shared_variables_.unlock();
 }
 
 // Listen to joint delta commands. Store them in a shared variable.
 void JogROSInterface::deltaJointCmdCB(const control_msgs::JointJogConstPtr& msg)
 {
-  shared_variables_mutex_.lock();
+  shared_variables_.lock();
   shared_variables_.joint_command_deltas = *msg;
 
   // Check if joint inputs is all zeros. Flag it if so to skip calculations/publication
@@ -209,12 +208,12 @@ void JogROSInterface::deltaJointCmdCB(const control_msgs::JointJogConstPtr& msg)
   {
     all_zeros &= (delta == 0.0);
   };
-  shared_variables_.zero_joint_cmd_flag = all_zeros;
+  shared_variables_.have_nonzero_joint_cmd = !all_zeros;
 
-  if (!shared_variables_.zero_joint_cmd_flag)
+  if (shared_variables_.have_nonzero_joint_cmd)
   {
     shared_variables_.latest_nonzero_cmd_stamp = msg->header.stamp;
   }
-  shared_variables_mutex_.unlock();
+  shared_variables_.unlock();
 }
 }  // namespace moveit_jog_arm
