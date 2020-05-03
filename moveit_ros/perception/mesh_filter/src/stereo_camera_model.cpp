@@ -109,7 +109,7 @@ void mesh_filter::StereoCameraModel::Parameters::setFilterParameters(GLRenderer&
 }
 
 // NOLINTNEXTLINE(readability-identifier-naming)
-const mesh_filter::StereoCameraModel::Parameters& mesh_filter::StereoCameraModel::REGISTERED_PSDK_PARAMS =
+const mesh_filter::StereoCameraModel::Parameters& mesh_filter::StereoCameraModel::REGISTERED_PSDK_PARAMS_ =
     mesh_filter::StereoCameraModel::Parameters(640, 480, 0.4, 10.0, 525, 525, 319.5, 239.5, 0.075, 0.125);
 
 const string mesh_filter::StereoCameraModel::RENDER_VERTEX_SHADER_SOURCE =
