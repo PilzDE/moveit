@@ -31,4 +31,4 @@
 - git:
     local-name: pilz_robots
     uri: https://github.com/PilzDE/pilz_robots.git
-    version: melodic-devel
+    version: prbt-ikfast-plugin-only
