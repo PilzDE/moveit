@@ -61,7 +61,6 @@
 #include "moveit_msgs/MoveGroupSequenceAction.h"
 
 static constexpr int WAIT_FOR_RESULT_TIME_OUT{ 5 };          // seconds
-static constexpr int TIME_BEFORE_CANCEL_GOAL{ 2 };           // seconds
 static constexpr int WAIT_FOR_ACTION_SERVER_TIME_OUT{ 10 };  // seconds
 
 const std::string SEQUENCE_ACTION_NAME("/sequence_move_group");
@@ -393,36 +392,6 @@ TEST_F(IntegrationTestSequenceAction, TestActionServerCallbacks)
 
   // wait for the ecpected events
   BARRIER({ GOAL_SUCCEEDED_EVENT, SERVER_IDLE_EVENT });
-}
-
-/**
- * @brief Tests that goal can be cancelled.
- *
- * Test Sequence:
- *    1. Send goal for planning and execution.
- *    2. Cancel goal before it finishes.
- *
- * Expected Results:
- *    1. Goal is sent to the action server.
- *    2. Goal is cancelled. Execution stops.
- */
-TEST_F(IntegrationTestSequenceAction, TestCancellingOfGoal)
-{
-  Sequence seq{ data_loader_->getSequence("ComplexSequence") };
-
-  moveit_msgs::MoveGroupSequenceGoal seq_goal;
-  seq_goal.request = seq.toRequest();
-
-  ac_.sendGoal(seq_goal);
-  // wait for 2 seconds
-  ros::Duration(TIME_BEFORE_CANCEL_GOAL).sleep();
-
-  ac_.cancelGoal();
-  ac_.waitForResult(ros::Duration(WAIT_FOR_RESULT_TIME_OUT));
-
-  moveit_msgs::MoveGroupSequenceResultConstPtr res = ac_.getResult();
-  EXPECT_EQ(res->response.error_code.val, moveit_msgs::MoveItErrorCodes::PREEMPTED)
-      << "Error code should be preempted.";
 }
 
 /**
