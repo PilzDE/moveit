@@ -130,7 +130,7 @@ void IntegrationTestSequenceAction::SetUp()
   move_group_->setJointValueTarget(robot_state);
   move_group_->move();
 
-  ASSERT_TRUE(isAtExpectedPosition(robot_state, *(move_group_->getCurrentState()), joint_position_tolerance_));
+  ASSERT_TRUE(isAtExpectedPosition(robot_state, *(move_group_->getCurrentState()), joint_position_tolerance_, group_name_));
 }
 
 /**
@@ -421,7 +421,7 @@ TEST_F(IntegrationTestSequenceAction, TestPlanOnlyFlag)
   EXPECT_FALSE(res->response.planned_trajectories.empty()) << "Planned trajectory is empty";
 
   ASSERT_TRUE(
-      isAtExpectedPosition(*(move_group_->getCurrentState()), start_config.toRobotState(), joint_position_tolerance_))
+      isAtExpectedPosition(*(move_group_->getCurrentState()), start_config.toRobotState(), joint_position_tolerance_, group_name_))
       << "Robot did move although \"PlanOnly\" flag set.";
 }
 
@@ -456,7 +456,7 @@ TEST_F(IntegrationTestSequenceAction, TestIgnoreRobotStateForPlanOnly)
   EXPECT_FALSE(res->response.planned_trajectories.empty()) << "Planned trajectory is empty";
 
   ASSERT_TRUE(
-      isAtExpectedPosition(*(move_group_->getCurrentState()), start_config.toRobotState(), joint_position_tolerance_))
+      isAtExpectedPosition(*(move_group_->getCurrentState()), start_config.toRobotState(), joint_position_tolerance_, group_name_))
       << "Robot did move although \"PlanOnly\" flag set.";
 }
 
