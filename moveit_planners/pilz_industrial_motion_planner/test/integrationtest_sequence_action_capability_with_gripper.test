@@ -47,6 +47,7 @@ POSSIBILITY OF SUCH DAMAGE.
     <arg name="info" value="true"/>
     <arg name="gripper" value="pg70"/>
     <arg name="pipeline" value="pilz_industrial_motion_planner" />
+    <arg name="execution_type" value="last point" />
   </include>
 
   <!-- run test -->
