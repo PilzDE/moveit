@@ -388,24 +388,24 @@ TEST_P(TrajectoryBlenderTransitionWindowTest, testNonUniformSamplingTime)
  *    2. Two trajectories that do not intersect.
  *    2. Blending trajectory cannot be generated.
  */
-TEST_P(TrajectoryBlenderTransitionWindowTest, testNotIntersectingTrajectories)
-{
-  Sequence seq{ data_loader_->getSequence("SimpleSequence") };
+//TEST_P(TrajectoryBlenderTransitionWindowTest, testNotIntersectingTrajectories)
+//{
+//  Sequence seq{ data_loader_->getSequence("SimpleSequence") };
 
-  std::vector<planning_interface::MotionPlanResponse> res{ generateLinTrajs(seq, 2) };
+//  std::vector<planning_interface::MotionPlanResponse> res{ generateLinTrajs(seq, 2) };
 
-  pilz_industrial_motion_planner::TrajectoryBlendRequest blend_req;
-  pilz_industrial_motion_planner::TrajectoryBlendResponse blend_res;
+//  pilz_industrial_motion_planner::TrajectoryBlendRequest blend_req;
+//  pilz_industrial_motion_planner::TrajectoryBlendResponse blend_res;
 
-  blend_req.group_name = planning_group_;
-  blend_req.link_name = target_link_;
-  blend_req.first_trajectory = res.at(0).trajectory_;
-  // replace the second trajectory to make the two trajectories timely not
-  // intersect
-  blend_req.second_trajectory = res.at(0).trajectory_;
-  blend_req.blend_radius = seq.getBlendRadius(0);
-  EXPECT_FALSE(blender_->blend(blend_req, blend_res));
-}
+//  blend_req.group_name = planning_group_;
+//  blend_req.link_name = target_link_;
+//  blend_req.first_trajectory = res.at(0).trajectory_;
+//  // replace the second trajectory to make the two trajectories timely not
+//  // intersect
+//  blend_req.second_trajectory = res.at(0).trajectory_;
+//  blend_req.blend_radius = seq.getBlendRadius(0);
+//  EXPECT_FALSE(blender_->blend(blend_req, blend_res));
+//}
 
 /**
  * @brief  Tests the blending of two cartesian trajectories with the
